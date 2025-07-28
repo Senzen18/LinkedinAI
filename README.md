@@ -1,14 +1,3 @@
-Read file: README.md
-Read file: TakeHomeAssigment.txt
-Read file: career_counsellor_agent.py
-Read file: content_gen_agent.py
-Read file: job_matcher_agent.py
-Read file: multi_agent_main.py
-Read file: profile_analyzer_agent.py
-Read file: vectorize_pdf.py
-Here is a comprehensive, industry-standard README for your project, based on the codebase, assignment requirements, and best practices:
-
----
 
 # LinkedinAI
 
