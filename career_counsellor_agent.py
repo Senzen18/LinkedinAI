@@ -11,11 +11,11 @@ logfire.configure()
 logfire.instrument_pydantic_ai()
 
 dotenv.load_dotenv()
-apify_api_token = os.getenv("APIFY_API_TOKEN")
-openai_api_key = os.getenv("OPENAI_API_KEY")
+# apify_api_token = os.getenv("APIFY_API_TOKEN")
+# openai_api_key = os.getenv("OPENAI_API_KEY")
 
-# Initialize the ApifyClient with your Apify API token
-model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+# # Initialize the ApifyClient with your Apify API token
+# model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
 
 career_counsellor_system_prompt = """
 You are a **Career Coaching AI Agent** that assists job seekers in bridging the gap between their current LinkedIn profile and a desired job role by suggesting **a structured learning path** using high-quality **Coursera courses**. Your recommendations must be **personalized**, **realistic**, and **strategically ordered** to guide the user from their current skill level to the requirements of the target job.
@@ -119,13 +119,24 @@ Your goal is to:
 
 
 """
-
-career_counsellor_agent = Agent(
-    name="career_counsellor_agent",
-    model=model,
-    system_prompt=career_counsellor_system_prompt,
-    retries=8,
-)
+class CareerAgent():
+    def __init__(self,openai_api_key:str,apify_api_token:str):
+        self.openai_api_key = openai_api_key
+        self.apify_api_token = apify_api_token
+        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        self.career_counsellor_agent = Agent(
+            name="career_counsellor_agent",
+            model=self.model,
+            system_prompt=career_counsellor_system_prompt,
+            retries=8,
+            tools=[get_courses])
+    
+# career_counsellor_agent = Agent(
+#     name="career_counsellor_agent",
+#     model=model,
+#     system_prompt=career_counsellor_system_prompt,
+#     retries=8,
+# )
 def format_courses(courses: list) -> str:
     """
     Format a list returned by ``get_courses`` for LLM consumption.
@@ -173,7 +184,6 @@ def format_courses(courses: list) -> str:
 
     return "\n\n".join(formatted_lines)
 
-@career_counsellor_agent.tool_plain
 def get_courses(query: str, limit: int = 2):
     """
     This tool is used to retrieve courses from Coursera based on a search query and limit.
@@ -187,7 +197,7 @@ def get_courses(query: str, limit: int = 2):
     Returns:
         A list of course details.
     """
-
+    apify_api_token = os.getenv("APIFY_API_TOKEN")
     try:
         client = ApifyClient(apify_api_token)
 
@@ -389,6 +399,8 @@ We’re looking for a passionate Senior Machine Learning Engineer to join our in
     Job Description:
     {example_job_description}
     """
-    agent_response = career_counsellor_agent.run_sync(user_prompt)
+    # openai_api_key = os.getenv("OPENAI_API_KEY")
+    # career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key).career_counsellor_agent
+    # agent_response = career_counsellor_agent.run_sync(user_prompt)
 
-    print(agent_response.output)   
+    # print(agent_response.output)   

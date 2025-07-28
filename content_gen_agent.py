@@ -39,17 +39,28 @@ Your task is to:
 Think like a career branding expert and use copywriting principles to craft impactful, personalized LinkedIn profile content. Be concise, outcome-driven, and prioritize relevance.
 
  """
-
-model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=open_ai_api_key))
-tavily_search = tavily_search_tool(api_key=os.getenv("TAVILY_API_KEY"))
-content_gen_agent = Agent(
+class ContentGenAgent():
+    def __init__(self,openai_api_key:str,tavily_api_key:str):
+        self.openai_api_key = openai_api_key
+        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        self.tavily_search = tavily_search_tool(api_key=tavily_api_key)
+        self.content_gen_agent = Agent(
     name="content_gen_agent",
-    model=model,
+    model=self.model,
     system_prompt=content_gen_system_prompt,
     retries=5,
-    tools=[tavily_search]
+    tools=[self.tavily_search,retreive_linkedin_knowledge_chunks]
 )
-@content_gen_agent.tool_plain
+# model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=open_ai_api_key))
+# tavily_search = tavily_search_tool(api_key=os.getenv("TAVILY_API_KEY"))
+# content_gen_agent = Agent(
+#     name="content_gen_agent",
+#     model=model,
+#     system_prompt=content_gen_system_prompt,
+#     retries=5,
+#     tools=[tavily_search]
+# )
+
 def retreive_linkedin_knowledge_chunks(query:str, k:int=3):
     """
     Retrieves the most relevant chunks of blogs on how to improve your linkedin profile.
@@ -152,5 +163,7 @@ if __name__ == "__main__":
     Job Description:
     {example_job_description}
     """
-    response = content_gen_agent.run_sync(user_prompt)
+    # openai_api_key = os.getenv("OPENAI_API_KEY")
+    # content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
+    # response = content_gen_agent.run_sync(user_prompt)
     print(response.output)

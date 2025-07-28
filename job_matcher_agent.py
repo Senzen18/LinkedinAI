@@ -20,7 +20,6 @@ logfire.instrument_pydantic_ai()
 
 # Load environment variables from .env file
 dotenv.load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
 
 
 job_retrieval_system_prompt = """ 
@@ -59,14 +58,27 @@ Respond only with the following 5 sections:
 
 """
 
-model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+class JobRetrievalAgent():
+    def __init__(self,openai_api_key:str,apify_api_token:str):
+        self.openai_api_key = openai_api_key
+        self.apify_api_token = apify_api_token
+        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        self.job_retrieval_agent = Agent(
+            name="job_retrieval_agent",
+            model=self.model, 
+            system_prompt=job_retrieval_system_prompt,
+            retries=3,
+            tools=[search_linkedin_jobs]
+        )
 
-job_retrieval_agent = Agent(
-    name="job_retrieval_agent",
-    model=model, 
-    system_prompt=job_retrieval_system_prompt,
-    retries=3,
-    )
+# model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+
+# job_retrieval_agent = Agent(
+#     name="job_retrieval_agent",
+#     model=model, 
+#     system_prompt=job_retrieval_system_prompt,
+#     retries=3,
+#     )
 
 
 
@@ -124,7 +136,7 @@ def format_job_listings_for_llm(job_listings: List[Dict[str, Any]]) -> str:
     return "\n\n====================\n\n".join(formatted_texts)
 
 
-@job_retrieval_agent.tool_plain
+
 def search_linkedin_jobs(
     keywords: str,
     location: str,
@@ -368,7 +380,10 @@ if __name__ == "__main__":
     # --- Example Usage ---
     # Search for "ML Engineer" jobs in the United States, based on test.py.
     job_keywords_to_search = "Senior ML Engineer"
-    response = job_retrieval_agent.run_sync(f"Can you generate a description for: {job_keywords_to_search}")
+    # openai_api_key = os.getenv("OPENAI_API_KEY")
+    # apify_api_token = os.getenv("APIFY_API_TOKEN")
+    # job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).job_retrieval_agent
+    # response = job_retrieval_agent.run_sync(f"Can you generate a description for: {job_keywords_to_search}")
     print(response.output)
 
     # Call the function to search for jobs

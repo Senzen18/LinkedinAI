@@ -33,15 +33,27 @@ Input:
 {linkedin_profile_json_here}
 """
 
-model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
-
-profile_analyzer_agent = Agent(
+class ProfileAnalyzerAgent():
+    def __init__(self,openai_api_key:str,apify_api_token:str):
+        self.openai_api_key = openai_api_key
+        self.apify_api_token = apify_api_token
+        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        self.profile_analyzer_agent = Agent(
     name="profile_analyzer_agent",
     system_prompt=system_prompt,
-    model=model,
+    model=self.model,
     retries=3,
-    
+    tools=[scrape_linkedin_profile]
 )
+# model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+
+# profile_analyzer_agent = Agent(
+#     name="profile_analyzer_agent",
+#     system_prompt=system_prompt,
+#     model=model,
+#     retries=3,
+    
+# )
 
 class ProfileOutput(BaseModel):
     """Structured output for scraped profile data."""
@@ -183,7 +195,6 @@ def format_profile_for_llm(profile: dict) -> str:
     return "\n".join(lines)
 
 
-@profile_analyzer_agent.tool_plain
 def scrape_linkedin_profile(profile_url: str) -> ProfileOutput:
     """
     Scrapes a LinkedIn profile and returns a clean, formatted string ready for

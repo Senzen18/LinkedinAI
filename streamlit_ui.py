@@ -7,8 +7,9 @@ from apify_client import ApifyClient
 from tavily import TavilyClient
 from openai import OpenAI, AuthenticationError as OpenAIAuthError
 from langgraph.types import Command
-from multi_agent_main import multi_agent_graph, load_user_profile_data, store, extract_interrupt_message
-
+# from multi_agent_main import multi_agent_graph, load_user_profile_data, store, extract_interrupt_message
+import logfire
+os.environ['LOGFIRE_TOKEN'] = st.secrets["LOGFIRE_TOKEN"]
 # Page configuration
 st.set_page_config(
     page_title="LinkedIn AI Career Assistant",
@@ -207,6 +208,9 @@ if not all_keys_valid:
     st.warning("Please enter and validate all API keys in the sidebar before starting the chat.")
 else:
     # Display chat history
+    from multi_agent_main import (
+        multi_agent_graph, load_user_profile_data, store, extract_interrupt_message
+    )
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])

@@ -23,10 +23,20 @@ from typing import Dict, Any
 import time
 from functools import partial
 # Import the specialised agents
-from profile_analyzer_agent import profile_analyzer_agent,scrape_linkedin_profile_plain
-from content_gen_agent import content_gen_agent
-from career_counsellor_agent import career_counsellor_agent
-from job_matcher_agent import job_retrieval_agent, job_matcher_node # job_matcher_node is already a helper function
+from profile_analyzer_agent import *
+from content_gen_agent import *
+from career_counsellor_agent import *
+from job_matcher_agent import *
+
+openai_api_key = os.getenv("OPENAI_API_KEY")
+apify_api_token = os.getenv("APIFY_API_TOKEN")
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+
+# profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).profile_analyzer_agent
+# content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
+# career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key).career_counsellor_agent
+# job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).job_retrieval_agent
+
 
 logfire.configure()
 logfire.instrument_pydantic_ai()
@@ -283,6 +293,8 @@ def save_cached_job_description(job_role: str, job_description: str, store):
 
 def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced profile analyzer with memory management."""
+
+    profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).profile_analyzer_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing profile data
@@ -327,6 +339,8 @@ def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> d
 
 def content_generator_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced content generator with memory management."""
+
+    content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing data
@@ -379,8 +393,10 @@ def content_generator_node(state: GraphState, config: Optional[dict] = None) -> 
         "agent_context": "content_generator"
     }
 
-def enhanced_career_counsellor_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def career_counsellor_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced career counsellor with memory management."""
+
+    career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).career_counsellor_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing data
@@ -518,6 +534,8 @@ def job_matcher_wrapper_node(state: GraphState, config: Optional[dict] = None) -
 
 def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced job retriever with memory management."""
+
+    job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).job_retrieval_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     existing_data = load_user_profile_data(user_id, store)
@@ -634,7 +652,7 @@ builder.add_node("extract_url_and_role", extract_url_and_role)
 builder.add_node("Orchestration_Router", Orchestration_Router)
 builder.add_node("profile_analyzer", profile_analyzer_node)
 builder.add_node("content_generator", content_generator_node)
-builder.add_node("career_counsellor", enhanced_career_counsellor_node)
+builder.add_node("career_counsellor", career_counsellor_node)
 builder.add_node("job_matcher", job_matcher_wrapper_node)
 builder.add_node("entry_gate", entry_gate)
 builder.add_node("job_retriever", job_retriever_node)
