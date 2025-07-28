@@ -240,8 +240,4 @@ This project is for educational and demonstration purposes. For commercial use, 
 
 ---
 
-**For questions, contributions, or issues, please open an issue or pull request on GitHub.**
 
----
-
-*Inspired by the CareerNinja LearnTube Take-Home Assignment.*
