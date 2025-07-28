@@ -2,9 +2,11 @@ import logfire
 from typing import List, Optional, TypedDict, Annotated, Literal
 import re
 import os
+import streamlit as st
 os.environ['LANGSMITH_OTEL_ENABLED'] = 'true'
 os.environ['LANGSMITH_TRACING'] = 'true'
 
+logfire.init(st.secrets["LOGFIRE_API_KEY"])
 
 from langgraph.types import Command, interrupt
 from langgraph.graph.message import add_messages
