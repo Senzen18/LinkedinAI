@@ -86,10 +86,7 @@ flowchart TD
   - Detects missing, incomplete, or poorly written sections.
   - Provides actionable, concrete suggestions for improvement.
   - Uses Apify to scrape LinkedIn profiles and formats them for LLM analysis.
-- **Main Tools Used:**
-  - **Apify**: For scraping LinkedIn profile data.
-  - **OpenAI GPT-4o**: For section-by-section critique and suggestions.
-  - **LangChain / Pydantic-AI**: For agent orchestration and prompt management.
+
 - **Agent Tools:**
   - `scrape_linkedin_profile(profile_url: str)`: Scrapes a LinkedIn profile and returns a formatted string and profile picture URL for LLM analysis.
 
@@ -101,11 +98,7 @@ flowchart TD
   - Identifies gaps and outdated language in the user profile.
   - Uses Tavily web search and a vectorized knowledge base for evidence-based rewriting.
   - Outputs succinct, recruiter-friendly profile sections.
-- **Main Tools Used:**
-  - **OpenAI GPT-4o**: For rewriting and optimization.
-  - **Tavily**: For authoritative web search on LinkedIn best practices and job-specific requirements.
-  - **FAISS Vector Store**: For semantic search over LinkedIn optimization resources.
-  - **LangChain / Pydantic-AI**: For agent orchestration and tool integration.
+
 - **Agent Tools:**
   - `retreive_linkedin_knowledge_chunks(query: str, k: int = 3)`: Retrieves the most relevant chunks from the vectorized LinkedIn optimization knowledge base.
   - `tavily_search`: (via Tavily integration) Performs authoritative web search for LinkedIn/job-specific advice.
@@ -117,11 +110,7 @@ flowchart TD
   - Synthesizes industry-standard job descriptions from real-world postings.
   - Compares user profile to job requirements across multiple axes (skills, experience, domain, education, projects, soft skills).
   - Generates a structured match report with scores and reasoning.
-- **Main Tools Used:**
-  - **Apify**: For scraping job postings from LinkedIn.
-  - **OpenAI GPT-4o**: For job description synthesis and match analysis.
-  - **LangChain**: For structured output and scoring logic.
-  - **Pydantic-AI**: For agent management and prompt engineering.
+
 - **Agent Tools:**
   - `search_linkedin_jobs(keywords: str, location: str, page_number: int, limit: int, sort: str, date_posted: str = '', experienceLevel: str = '')`: Scrapes job postings from LinkedIn for a given role and location.
 
@@ -132,10 +121,7 @@ flowchart TD
   - Analyzes skill gaps between the user's profile and the target job.
   - Recommends sequenced Coursera courses to bridge gaps.
   - Justifies each recommendation and organizes courses by skill track.
-- **Main Tools Used:**
-  - **Apify**: For searching and retrieving Coursera course metadata.
-  - **OpenAI GPT-4o**: For skill gap analysis and learning path generation.
-  - **LangChain / Pydantic-AI**: For agent orchestration and prompt management.
+
 - **Agent Tools:**
   - `get_courses(query: str, limit: int = 2)`: Searches Coursera for relevant courses based on a skill or topic.
 
@@ -146,12 +132,6 @@ flowchart TD
   - Loads and splits PDF documents.
   - Embeds text using OpenAI embeddings.
   - Enables semantic search for relevant advice during profile rewriting.
-- **Main Tools Used:**
-  - **LangChain**: For document loading, splitting, and vector store management.
-  - **OpenAI Embeddings**: For semantic vectorization of text.
-  - **FAISS**: For fast similarity search over knowledge chunks.
-- **Agent Tools:**
-  - *(Not an agent, but exposes the vector store for use by other agents, e.g., via `retreive_linkedin_knowledge_chunks` in the Content Generation Agent.)*
 
 ---
 
