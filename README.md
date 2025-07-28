@@ -232,12 +232,4 @@ LinkedinAI/
 - **Prompt Engineering**: Carefully crafted system prompts for each agent to ensure high-quality, actionable outputs.
 - **Orchestration Graph**: Visual and code-based representation of agent flow for maintainability and clarity.
 
----
-
-## License
-
-This project is for educational and demonstration purposes. For commercial use, please ensure compliance with the terms of the APIs and data sources used (OpenAI, Apify, Tavily, Coursera, LinkedIn, etc.).
-
----
-
 
