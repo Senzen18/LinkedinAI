@@ -7,7 +7,7 @@ PyPDF
 python-dotenv
 streamlit
 apify-client
-tavily
+tavily-pyhton
 pydantic_ai
 logfire
 langgraph
