@@ -1,0 +1,17 @@
+langchain
+langchain-community
+langchain-openai
+faiss-cpu
+pandas
+PyPDF
+python-dotenv
+streamlit
+apify-client
+tavily
+pydantic_ai
+logfire
+langgraph
+langchain_core
+langchain_tavily
+openai
+
