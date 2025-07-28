@@ -6,7 +6,7 @@ import streamlit as st
 os.environ['LANGSMITH_OTEL_ENABLED'] = 'true'
 os.environ['LANGSMITH_TRACING'] = 'true'
 
-
+os.environ['LOGFIRE_TOKEN'] = st.secrets["LOGFIRE_TOKEN"]
 
 from langgraph.types import Command, interrupt
 from langgraph.graph.message import add_messages
