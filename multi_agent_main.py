@@ -94,7 +94,7 @@ class ExtractUrlAndRoleOutput(BaseModel):
     profile_url: Optional[str] = Field(description="The LinkedIn profile URL extracted from the user's message.", default=None)
     job_role: Optional[str] = Field(description="The job role extractd from the user's message.", default=None)
 
-def extract_url_and_role(state: GraphState,config: Optional[dict] = None) -> dict:
+def extract_url_and_role(state: GraphState,config: Optional[dict] ) -> dict:
     """Extract the LinkedIn profile URL and job role from the user's message."""
 
     system_prompt = """
@@ -109,7 +109,7 @@ def extract_url_and_role(state: GraphState,config: Optional[dict] = None) -> dic
     
     """
     user_id = state.get("user_id", "default_user")
-    store = config["configurable"]["store"]
+    store = config.get("configurable", {}).get("store", store)
     last_user_message = state["messages"][-1].content
     messages = [
         SystemMessage(content=system_prompt),
@@ -311,7 +311,7 @@ def save_cached_job_description(job_role: str, job_description: str, store):
 
 def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced profile analyzer with memory management."""
-    print("=====================================================================================profile_analyzer_node",model_provider)
+
     profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).profile_analyzer_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
