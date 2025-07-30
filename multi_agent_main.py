@@ -94,7 +94,7 @@ class ExtractUrlAndRoleOutput(BaseModel):
     profile_url: Optional[str] = Field(description="The LinkedIn profile URL extracted from the user's message.", default=None)
     job_role: Optional[str] = Field(description="The job role extractd from the user's message.", default=None)
 
-def extract_url_and_role(state: GraphState,config: Optional[dict] ) -> dict:
+def extract_url_and_role(state: GraphState,config: Optional[dict] = None ) -> dict:
     """Extract the LinkedIn profile URL and job role from the user's message."""
 
     system_prompt = """
@@ -360,7 +360,8 @@ def content_generator_node(state: GraphState, config: Optional[dict] = None) -> 
 
     content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key, model_provider=model_provider, gemini_api_key=gemini_api_key).content_gen_agent
     user_id = state.get("user_id", "default_user")
-    store = config["configurable"]["store"]
+    config = config.get("configurable", {})
+    store = config.get("store", "store")
     # Load existing data
     existing_data = load_user_profile_data(user_id, store)
     
