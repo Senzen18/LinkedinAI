@@ -109,7 +109,7 @@ def extract_url_and_role(state: GraphState,config: Optional[dict] = None ) -> di
     
     """
     user_id = state.get("user_id", "default_user")
-    store = config.get("configurable", {}).get("store", store)
+    store = "store"
     last_user_message = state["messages"][-1].content
     messages = [
         SystemMessage(content=system_prompt),
