@@ -109,6 +109,8 @@ def extract_url_and_role(state: GraphState,config: Optional[dict] = None ) -> di
     
     """
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     last_user_message = state["messages"][-1].content
@@ -315,6 +317,8 @@ def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> d
 
     profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).profile_analyzer_agent
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     # Load existing profile data
@@ -362,6 +366,8 @@ def content_generator_node(state: GraphState, config: Optional[dict] = None) -> 
 
     content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key, model_provider=model_provider, gemini_api_key=gemini_api_key).content_gen_agent
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     # Load existing data
@@ -419,6 +425,8 @@ def career_counsellor_node(state: GraphState, config: Optional[dict] = None) -> 
 
     career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).career_counsellor_agent
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     # Load existing data
@@ -507,6 +515,8 @@ def entry_gate(state: GraphState) -> dict:
 def job_matcher_wrapper_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced job matcher with memory management."""
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     # Load existing data
@@ -560,6 +570,8 @@ def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict
 
     job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).job_retrieval_agent
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     existing_data = load_user_profile_data(user_id, store)
@@ -606,6 +618,8 @@ def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict
 def scrape_linkedin_profile_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced scrape LinkedIn profile with memory management."""
     user_id = state.get("user_id", "default_user")
+    if config is None:
+        config = {} 
     config = config.get("configurable", {})
     store = config.get("store", "store")
     existing_data = load_user_profile_data(user_id, store)
