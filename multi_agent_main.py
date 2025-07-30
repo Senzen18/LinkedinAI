@@ -22,6 +22,7 @@ from langchain_core.runnables.graph_mermaid import draw_mermaid_png
 from typing import Dict, Any
 import time
 from functools import partial
+import streamlit as st
 # Import the specialised agents
 from profile_analyzer_agent import *
 from content_gen_agent import *
@@ -31,7 +32,9 @@ from job_matcher_agent import *
 openai_api_key = os.getenv("OPENAI_API_KEY")
 apify_api_token = os.getenv("APIFY_API_TOKEN")
 tavily_api_key = os.getenv("TAVILY_API_KEY")
-
+model_provider = os.getenv("MODEL_PROVIDER", "openai")
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+print("=====================================================================================os",model_provider,gemini_api_key)
 # profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).profile_analyzer_agent
 # content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
 # career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key).career_counsellor_agent
@@ -41,6 +44,21 @@ tavily_api_key = os.getenv("TAVILY_API_KEY")
 logfire.configure()
 logfire.instrument_pydantic_ai()
 
+
+
+
+
+def get_llm(temperature=0):
+    provider = os.getenv('MODEL_PROVIDER', 'gemini')
+    if provider == 'openai':
+        api_key = os.getenv('OPENAI_API_KEY')
+        return ChatOpenAI(model="gpt-4o", temperature=temperature, api_key=api_key)
+    elif provider == 'gemini':
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        api_key = os.getenv('GOOGLE_API_KEY')
+        return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=temperature, google_api_key=api_key)
+    else:
+        raise ValueError("Invalid model provider")
 # ------------------------
 # 1. Define the shared graph state
 # ------------------------
@@ -98,7 +116,7 @@ def extract_url_and_role(state: GraphState,config: Optional[dict] = None) -> dic
         HumanMessage(content=last_user_message)
     ]
 
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = get_llm(temperature=0)
     structured_llm = llm.with_structured_output(ExtractUrlAndRoleOutput)
     result = structured_llm.invoke(messages)
     
@@ -133,7 +151,7 @@ def Orchestration_Router(state: GraphState) -> dict:
     - If the user wants to rewrite their profile according to a job role: 'profile_rewrite'
     - If the user wants recommendations to upskill based on skill gap: 'career_counselling'
     """
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = get_llm(temperature=0)
     structured_llm = llm.with_structured_output(RoutingOutput)
     last_user_message = state["messages"][-1].content
 
@@ -293,8 +311,8 @@ def save_cached_job_description(job_role: str, job_description: str, store):
 
 def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced profile analyzer with memory management."""
-
-    profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).profile_analyzer_agent
+    print("=====================================================================================profile_analyzer_node",model_provider)
+    profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).profile_analyzer_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing profile data
@@ -340,7 +358,7 @@ def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> d
 def content_generator_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced content generator with memory management."""
 
-    content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
+    content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key, model_provider=model_provider, gemini_api_key=gemini_api_key).content_gen_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing data
@@ -396,7 +414,7 @@ def content_generator_node(state: GraphState, config: Optional[dict] = None) -> 
 def career_counsellor_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced career counsellor with memory management."""
 
-    career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).career_counsellor_agent
+    career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).career_counsellor_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     # Load existing data
@@ -535,7 +553,7 @@ def job_matcher_wrapper_node(state: GraphState, config: Optional[dict] = None) -
 def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict:
     """Enhanced job retriever with memory management."""
 
-    job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token).job_retrieval_agent
+    job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).job_retrieval_agent
     user_id = state.get("user_id", "default_user")
     store = config["configurable"]["store"]
     existing_data = load_user_profile_data(user_id, store)
@@ -544,6 +562,7 @@ def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict
     if not state.get("job_role") or state.get("job_role") == "null":
         if existing_data.get("job_role") == None:
             job_role = interrupt(" Before we can match your profile to jobs, please provide the job role you are interested in.")
+
         else:
             job_role = existing_data.get("job_role")
             job_description = existing_data.get("job_description")
@@ -574,6 +593,7 @@ def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict
     save_cached_job_description(job_role, job_description, store)
     return {
         "job_description": job_description,
+        "job_role": job_role,
         "messages": [SystemMessage(content=f"Successfully retrieved job description for {job_role}")]
     }
 

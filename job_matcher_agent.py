@@ -59,15 +59,22 @@ Respond only with the following 5 sections:
 """
 
 class JobRetrievalAgent():
-    def __init__(self,openai_api_key:str,apify_api_token:str):
+    def __init__(self,openai_api_key:str,apify_api_token:str, model_provider: str = "gemini", gemini_api_key: Optional[str] = None):
         self.openai_api_key = openai_api_key
         self.apify_api_token = apify_api_token
-        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        if model_provider == "openai":
+            self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        elif model_provider == "gemini":
+            from pydantic_ai.models.gemini import GeminiModel
+            from pydantic_ai.providers.google_gla import GoogleGLAProvider
+            self.model = GeminiModel("gemini-2.5-flash", provider=GoogleGLAProvider(api_key=gemini_api_key))
+        else:
+            raise ValueError("Invalid model provider")
         self.job_retrieval_agent = Agent(
             name="job_retrieval_agent",
             model=self.model, 
             system_prompt=job_retrieval_system_prompt,
-            retries=3,
+            retries=2,
             tools=[search_linkedin_jobs]
         )
 
@@ -311,6 +318,18 @@ def format_match_report_as_bullets(report) -> str:
 
     return "\n".join(lines)
 
+def get_llm(temperature=0):
+    provider = os.getenv('MODEL_PROVIDER', 'openai')
+    if provider == 'openai':
+        api_key = os.getenv('OPENAI_API_KEY')
+        return ChatOpenAI(model="gpt-4o", temperature=temperature, api_key=api_key)
+    elif provider == 'gemini':
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        api_key = os.getenv('GOOGLE_API_KEY')
+        return ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=temperature, google_api_key=api_key)
+    else:
+        raise ValueError("Invalid model provider")
+
 def job_matcher_node(state: dict) -> dict:
     """
     A LangGraph node that uses LangChain's `.with_structured_output()` to generate
@@ -332,7 +351,7 @@ def job_matcher_node(state: dict) -> dict:
 
     # Initialize the LangChain model, binding it to our Pydantic class
     # This instructs the LLM to return JSON that matches the MatchReport schema
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = get_llm(temperature=0)
     structured_llm = llm.with_structured_output(MatchReport)
 
     # The prompt template now has placeholders for our inputs

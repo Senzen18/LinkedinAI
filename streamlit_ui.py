@@ -1,7 +1,7 @@
 
 import streamlit as st
 import os
-import multi_agent_main  # Assuming multi_agent_main.py is in the same directory
+ # Assuming multi_agent_main.py is in the same directory
 import openai
 from apify_client import ApifyClient
 from tavily import TavilyClient
@@ -9,6 +9,7 @@ from openai import OpenAI, AuthenticationError as OpenAIAuthError
 from langgraph.types import Command
 # from multi_agent_main import multi_agent_graph, load_user_profile_data, store, extract_interrupt_message
 import logfire
+import google.generativeai as genai
 os.environ['LOGFIRE_TOKEN'] = st.secrets["LOGFIRE_TOKEN"]
 # Page configuration
 st.set_page_config(
@@ -68,11 +69,12 @@ if 'api_keys' not in st.session_state:
     st.session_state.api_keys = {
         'openai': '',
         'apify': '',
-        'tavily': ''
+        'tavily': '',
+        'gemini': ''
     }
 if 'validated' not in st.session_state:
     st.session_state.validated = {
-        'openai': False,
+        'model': False,
         'apify': False,
         'tavily': False
     }
@@ -90,6 +92,9 @@ def update_apify_key():
 
 def update_tavily_key():
     st.session_state.api_keys['tavily'] = st.session_state.tavily_input
+
+def update_gemini_key():
+    st.session_state.api_keys['gemini'] = st.session_state.gemini_input
 
 # Validation functions
 def validate_openai_key(api_key: str) -> bool:
@@ -124,6 +129,20 @@ def validate_tavily_key(api_key: str) -> bool:
     except Exception:
         return False
 
+def validate_gemini_key(api_key: str) -> bool:
+    if not api_key:
+        return False
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        response = model.generate_content("test")
+        print("Response",response)
+        return True
+    except Exception as e:
+        print("Error validating Gemini API key",e)  
+        return False
+
 # Helper to build initial graph state
 
 def build_initial_state(user_query: str, user_id: str, thread_id: int):
@@ -148,16 +167,28 @@ with st.sidebar:
     st.title("🔑 API Keys")
     st.markdown("Enter your API keys below to start chatting.")
     
-    show_keys = st.checkbox("Show API keys", key="show_api_keys")
-    input_type = "default" if show_keys else "password"
+    input_type = "password"
     
-    st.text_input(
-        "OpenAI API Key",
-        type=input_type,
-        value=st.session_state.api_keys['openai'],
-        key="openai_input",
-        on_change=update_openai_key
-    )
+    st.selectbox("LLM Provider", ["OpenAI", "Gemini"], key="model_provider")
+    provider = st.session_state.model_provider
+    
+    if provider == "OpenAI":
+        st.text_input(
+            "OpenAI API Key",
+            type=input_type,
+            value=st.session_state.api_keys['openai'],
+            key="openai_input",
+            on_change=update_openai_key
+        )
+    else:
+        st.text_input(
+            "Gemini API Key",
+            type=input_type,
+            value=st.session_state.api_keys['gemini'],
+            key="gemini_input",
+            on_change=update_gemini_key
+        )
+    
     st.text_input(
         "Apify API Key",
         type=input_type,
@@ -175,23 +206,36 @@ with st.sidebar:
     
     if st.button("Proceed"):
         # Validate keys
-        st.session_state.validated['openai'] = validate_openai_key(st.session_state.api_keys['openai'])
+        provider = st.session_state.model_provider
+        if provider == "OpenAI":
+            st.session_state.validated['model'] = validate_openai_key(st.session_state.api_keys['openai'])
+        else:
+            st.session_state.validated['model'] = validate_gemini_key(st.session_state.api_keys['gemini'])
+        
         st.session_state.validated['apify'] = validate_apify_key(st.session_state.api_keys['apify'])
         st.session_state.validated['tavily'] = validate_tavily_key(st.session_state.api_keys['tavily'])
         
-        if all(st.session_state.validated.values()):
+        if st.session_state.validated['model'] and st.session_state.validated['apify'] and st.session_state.validated['tavily']:
             st.success("All API keys validated successfully!")
         else:
-            if not st.session_state.validated['openai']:
-                st.error("Invalid OpenAI API key")
+            if not st.session_state.validated['model']:
+                st.error(f"Invalid {provider} API key")
             if not st.session_state.validated['apify']:
                 st.error("Invalid Apify API key")
             if not st.session_state.validated['tavily']:
                 st.error("Invalid Tavily API key")
 
 # Set environment variables if keys are provided and validated
-if st.session_state.validated['openai']:
-    os.environ['OPENAI_API_KEY'] = st.session_state.api_keys['openai']
+if st.session_state.validated['model']:
+    provider = st.session_state.model_provider
+    os.environ['MODEL_PROVIDER'] = provider.lower()
+    if provider == "OpenAI":
+        os.environ['OPENAI_API_KEY'] = st.session_state.api_keys['openai']
+        os.environ['MODEL_API_KEY'] = st.session_state.api_keys['openai']
+    else:
+        os.environ['GEMINI_API_KEY'] = st.session_state.api_keys['gemini']
+        os.environ['GOOGLE_API_KEY'] = st.session_state.api_keys['gemini']
+        os.environ['MODEL_API_KEY'] = st.session_state.api_keys['gemini']
 if st.session_state.validated['apify']:
     os.environ['APIFY_API_TOKEN'] = st.session_state.api_keys['apify']
 if st.session_state.validated['tavily']:
@@ -202,12 +246,13 @@ st.title("🤖 LinkedIn AI Career Assistant")
 st.markdown("Chat with our AI to get career advice, profile analysis, job matching, and more!")
 
 # Check if all keys are provided and validated
-all_keys_valid = all(st.session_state.validated.values())
+all_keys_valid = st.session_state.validated['model'] and st.session_state.validated['apify'] and st.session_state.validated['tavily']
 
 if not all_keys_valid:
     st.warning("Please enter and validate all API keys in the sidebar before starting the chat.")
 else:
     # Display chat history
+    import multi_agent_main
     from multi_agent_main import (
         multi_agent_graph, load_user_profile_data, store, extract_interrupt_message
     )

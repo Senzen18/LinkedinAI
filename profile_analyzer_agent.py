@@ -34,15 +34,22 @@ Input:
 """
 
 class ProfileAnalyzerAgent():
-    def __init__(self,openai_api_key:str,apify_api_token:str):
+    def __init__(self,openai_api_key:str,apify_api_token:str, model_provider: str = "gemini", gemini_api_key: Optional[str] = None):
         self.openai_api_key = openai_api_key
         self.apify_api_token = apify_api_token
-        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        if model_provider == "openai":
+            self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        elif model_provider == "gemini":
+            from pydantic_ai.models.gemini import GeminiModel
+            from pydantic_ai.providers.google_gla import GoogleGLAProvider
+            self.model = GeminiModel("gemini-2.5-flash", provider=GoogleGLAProvider(api_key=gemini_api_key))
+        else:
+            raise ValueError("Invalid model provider")
         self.profile_analyzer_agent = Agent(
     name="profile_analyzer_agent",
     system_prompt=system_prompt,
     model=self.model,
-    retries=3,
+    retries=2,
     tools=[scrape_linkedin_profile]
 )
 # model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))

@@ -7,6 +7,7 @@ from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.providers.openai import OpenAIProvider
 import logfire
 import time
+from typing import Optional
 logfire.configure()  
 logfire.instrument_pydantic_ai()
 
@@ -110,25 +111,31 @@ Your goal is to:
 
 ###  Final Notes
 - Keep using the tool to get courses until all the skill gaps are filled.
-- You are advised to follow the tracks sequentially.
 - Use only the names and urls extracted from the tool output.
 - Do not make up any information.
 - Do not use any other information than the tool output.
-
+- Do not ask any more questions to the user. ALl the context is already provided to you.
 
 
 
 """
 class CareerAgent():
-    def __init__(self,openai_api_key:str,apify_api_token:str):
+    def __init__(self,openai_api_key:str,apify_api_token:str, model_provider: str = "gemini", gemini_api_key: Optional[str] = None):
         self.openai_api_key = openai_api_key
         self.apify_api_token = apify_api_token
-        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        if model_provider == "openai":
+            self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        elif model_provider == "gemini":
+            from pydantic_ai.models.gemini import GeminiModel
+            from pydantic_ai.providers.google_gla import GoogleGLAProvider
+            self.model = GeminiModel("gemini-2.5-flash", provider=GoogleGLAProvider(api_key=gemini_api_key))
+        else:
+            raise ValueError("Invalid model provider")
         self.career_counsellor_agent = Agent(
             name="career_counsellor_agent",
             model=self.model,
             system_prompt=career_counsellor_system_prompt,
-            retries=8,
+            retries=4,
             tools=[get_courses])
     
 # career_counsellor_agent = Agent(
@@ -184,7 +191,7 @@ def format_courses(courses: list) -> str:
 
     return "\n\n".join(formatted_lines)
 
-def get_courses(query: str, limit: int = 2):
+def get_courses(query: str, limit: int = 3):
     """
     This tool is used to retrieve courses from Coursera based on a search query and limit.
     It is used to get the courses that are relevant courses for the user to learn to get the job or to improve their skills.
@@ -215,15 +222,16 @@ def get_courses(query: str, limit: int = 2):
         course_list = []
         for item in client.dataset(run["defaultDatasetId"]).iterate_items():
             course_list.append(item)
-        time.sleep(500)
+        print("course_list",course_list)
+        
         return format_courses(course_list)
     except Exception as e:
         print(f"Error getting courses: {str(e)}")
         return f"Error getting courses: {str(e)}"
 
 if __name__ == "__main__":
-    # courses = get_courses("Machine Learning", limit=3)
-    # print(courses)
+    courses = get_courses("Machine Learning", limit=3)
+    print(courses)
 
     example_user_profile = """
     ## Name

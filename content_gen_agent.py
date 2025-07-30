@@ -7,7 +7,8 @@ from langchain_community.vectorstores import FAISS
 from langchain_openai import OpenAIEmbeddings
 from langchain_tavily import TavilySearch
 from pydantic_ai.common_tools.tavily import tavily_search_tool
-
+from typing import Optional
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 dotenv.load_dotenv()
 open_ai_api_key = os.getenv("OPENAI_API_KEY")
@@ -35,14 +36,22 @@ Your task is to:
 #Final Notes
 - Keep using the tools until you get enough knowledge to rewrite the profile.
 - Do not shy away from using the tools.
+- Do not ask any more questions to the user. ALl the context is already provided to you.
 
 Think like a career branding expert and use copywriting principles to craft impactful, personalized LinkedIn profile content. Be concise, outcome-driven, and prioritize relevance.
 
  """
 class ContentGenAgent():
-    def __init__(self,openai_api_key:str,tavily_api_key:str):
+    def __init__(self,openai_api_key:str,tavily_api_key:str, model_provider: str = "gemini", gemini_api_key: Optional[str] = None):
         self.openai_api_key = openai_api_key
-        self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        if model_provider == "openai":
+            self.model = OpenAIModel("gpt-4o",provider=OpenAIProvider(api_key=openai_api_key))
+        elif model_provider == "gemini":
+            from pydantic_ai.models.gemini import GeminiModel
+            from pydantic_ai.providers.google_gla import GoogleGLAProvider
+            self.model = GeminiModel("gemini-2.5-flash", provider=GoogleGLAProvider(api_key=gemini_api_key))
+        else:
+            raise ValueError("Invalid model provider")
         self.tavily_search = tavily_search_tool(api_key=tavily_api_key)
         self.content_gen_agent = Agent(
     name="content_gen_agent",
@@ -70,9 +79,18 @@ def retreive_linkedin_knowledge_chunks(query:str, k:int=3):
     Returns:
         list: A list of chunks that are most relevant to the query.
     """
+    import asyncio
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        asyncio.set_event_loop(asyncio.new_event_loop())
     print(f"Retrieving {k} chunks for query: {query}")
     path = "vectordb"
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", api_key=open_ai_api_key)
+    embeddings = embeddings = GoogleGenerativeAIEmbeddings(
+    model="models/embedding-001",          # or "gemini-embedding-001"
+    google_api_key= os.getenv("GEMINI_API_KEY")
+)
+    # embeddings = OpenAIEmbeddings(model="text-embedding-3-small", api_key=open_ai_api_key)
     vectordb = FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
     chunks = vectordb.similarity_search(query, k=k)
     # Extract the relevant text content from the chunks and format as a readable string for the LLM
@@ -164,6 +182,6 @@ if __name__ == "__main__":
     {example_job_description}
     """
     # openai_api_key = os.getenv("OPENAI_API_KEY")
-    # content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
-    # response = content_gen_agent.run_sync(user_prompt)
+    content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key).content_gen_agent
+    response = content_gen_agent.run_sync(user_prompt)
     print(response.output)
