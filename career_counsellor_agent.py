@@ -65,6 +65,16 @@ Your goal is to:
      - Course level (beginner/intermediate/advanced)
      - How it fits into the career path progression
 
+
+
+ ---
+###  Rules to follow
+- Keep using the tool to get courses until all the skill gaps are filled.
+- Use only the names and urls extracted from the tool output.
+- Do not make up any information.
+- Do not use any other information than the tool output.
+- Do not ask any more questions to the user. ALl the context is already provided to you.
+
 ---
 
 ### OUTPUT FORMAT (Markdown)
@@ -109,12 +119,6 @@ Your goal is to:
 
 ---
 
-###  Final Notes
-- Keep using the tool to get courses until all the skill gaps are filled.
-- Use only the names and urls extracted from the tool output.
-- Do not make up any information.
-- Do not use any other information than the tool output.
-- Do not ask any more questions to the user. ALl the context is already provided to you.
 
 
 
@@ -135,7 +139,7 @@ class CareerAgent():
             name="career_counsellor_agent",
             model=self.model,
             system_prompt=career_counsellor_system_prompt,
-            retries=4,
+            retries=3,
             tools=[get_courses])
     
 # career_counsellor_agent = Agent(
