@@ -19,6 +19,7 @@ from langgraph.config import get_stream_writer
 from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.store.memory import InMemoryStore
 from langchain_core.runnables.graph_mermaid import draw_mermaid_png
+from langchain_core.runnables import RunnableConfig
 from typing import Dict, Any
 import time
 from functools import partial
@@ -94,7 +95,7 @@ class ExtractUrlAndRoleOutput(BaseModel):
     profile_url: Optional[str] = Field(description="The LinkedIn profile URL extracted from the user's message.", default=None)
     job_role: Optional[str] = Field(description="The job role extractd from the user's message.", default=None)
 
-def extract_url_and_role(state: GraphState,config: Optional[dict] = None ) -> dict:
+def extract_url_and_role(state: GraphState,config: RunnableConfig) -> dict:
     """Extract the LinkedIn profile URL and job role from the user's message."""
 
     system_prompt = """
@@ -312,7 +313,7 @@ def save_cached_job_description(job_role: str, job_description: str, store):
     namespace = ("job_descriptions",)
     store.put(namespace, key, {"content": job_description})
 
-def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def profile_analyzer_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced profile analyzer with memory management."""
 
     profile_analyzer_agent = ProfileAnalyzerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).profile_analyzer_agent
@@ -361,7 +362,7 @@ def profile_analyzer_node(state: GraphState, config: Optional[dict] = None) -> d
         "agent_context": "profile_analyzer"
     }
 
-def content_generator_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def content_generator_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced content generator with memory management."""
 
     content_gen_agent = ContentGenAgent(openai_api_key=openai_api_key,tavily_api_key=tavily_api_key, model_provider=model_provider, gemini_api_key=gemini_api_key).content_gen_agent
@@ -420,7 +421,7 @@ def content_generator_node(state: GraphState, config: Optional[dict] = None) -> 
         "agent_context": "content_generator"
     }
 
-def career_counsellor_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def career_counsellor_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced career counsellor with memory management."""
 
     career_counsellor_agent = CareerAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).career_counsellor_agent
@@ -512,7 +513,7 @@ def entry_gate(state: GraphState) -> dict:
 # The job matcher agent in job_matcher_agent.py uses a LangGraph node function already (job_matcher_node)
 # We'll wrap it to ensure state compatibility.
 
-def job_matcher_wrapper_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def job_matcher_wrapper_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced job matcher with memory management."""
     user_id = state.get("user_id", "default_user")
     if not config:
@@ -565,7 +566,7 @@ def job_matcher_wrapper_node(state: GraphState, config: Optional[dict] = None) -
         "agent_context": "job_matcher"
     }
 
-def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def job_retriever_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced job retriever with memory management."""
 
     job_retrieval_agent = JobRetrievalAgent(openai_api_key=openai_api_key,apify_api_token=apify_api_token, model_provider=model_provider, gemini_api_key=gemini_api_key).job_retrieval_agent
@@ -615,7 +616,7 @@ def job_retriever_node(state: GraphState, config: Optional[dict] = None) -> dict
         "messages": [SystemMessage(content=f"Successfully retrieved job description for {job_role}")]
     }
 
-def scrape_linkedin_profile_node(state: GraphState, config: Optional[dict] = None) -> dict:
+def scrape_linkedin_profile_node(state: GraphState, config: RunnableConfig) -> dict:
     """Enhanced scrape LinkedIn profile with memory management."""
     user_id = state.get("user_id", "default_user")
     if not config:
